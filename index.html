@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>QR code displayer</title>
+        <link rel="stylesheet" href="bootstrap.min.css"></link>
+        <style type="text/css">
+            .thumbnail .value {
+                text-align: center
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="well">
+                    <p>Powered by <a href="http://goqr.me">goqr.me</a></p>
+
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label" for="pattern">Pattern</label>
+                            <div class="controls">
+                                <input type="text" data-bind="value: pattern" id="pattern" placeholder="Pattern">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="first">Series Range</label>
+                            <div class="controls controls-row">
+                                <input type="text" class="span2" data-bind="value: min" id="first" placeholder="First">
+                                <input type="text" class="span2" data-bind="value: max" id="last" placeholder="Last">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="size">Image Size</label>
+                            <div class="controls">
+                                <input type="text" data-bind="value: size" id="sizes" placeholder="Size">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <button type="submit" data-bind="click: refreshQrCodes" class="btn btn-primary">Show</button>
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+            <div class="row">
+                <ul data-bind="foreach: qrCodes" class="thumbnails">
+                    <li class="span4">
+                        <div class="thumbnail">
+                            <img data-bind="attr: {src: url, alt: value}"/>
+                            <h4 class="value" data-bind="text: value"></h4>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="knockout-2.2.1.js"></script>
+        <script type="text/javascript">
+            function MainViewModel() {
+                var self = this;
+
+                self.pattern = ko.observable("blah-$");
+                self.min = ko.observable(1);
+                self.max = ko.observable(10);
+                self.size = ko.observable(200);
+
+                self.sizeParam = function() {
+                    return "size=" + self.size() + "x" + self.size();
+                };
+
+                self.refreshQrCodes = function() {
+                    var min = parseInt(self.min(), 10);
+                    var max = parseInt(self.max(), 10);
+                    var pattern = self.pattern();
+
+                    self.qrCodes.removeAll();
+
+                    for(var i = min; i <= max; i++) {
+                        var padded = pad(i, max.toString().length);
+                        var interpolated = interpolate(padded, pattern);
+
+                        self.qrCodes.push({
+                            value: interpolated,
+                            url: self.imageUrl(interpolated)
+                        });
+                    }
+                };
+
+                function pad(value, size) {
+                    value = value.toString();
+                    while(value.length < size) {
+                        value = '0' + value;
+                    }
+                    return value;
+                }
+
+                function interpolate(value, pattern) {
+                    return pattern.replace(/\$/, value.toString());
+                }
+
+                self.imageUrl = function(value) {
+                    value = encodeURIComponent(value);
+                    return "http://api.qrserver.com/v1/create-qr-code/?data=" + value + "&" + self.sizeParam();
+                };
+
+                // Elements are objects with properties:
+                //   value - value embedded in QR code
+                //   url   - QR code image url
+                self.qrCodes = ko.observableArray();
+            }
+
+            var vm = new MainViewModel();
+            ko.applyBindings(vm);
+        </script>
+    </body>
+</html>
