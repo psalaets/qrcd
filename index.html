@@ -66,6 +66,11 @@
                 self.max = ko.observable(10);
                 self.size = ko.observable(200);
 
+                // Elements are objects with properties:
+                //   value - value embedded in QR code
+                //   url   - QR code image url
+                self.qrCodes = ko.observableArray();
+
                 self.sizeParam = function() {
                     return "size=" + self.size() + "x" + self.size();
                 };
@@ -75,17 +80,21 @@
                     var max = parseInt(self.max(), 10);
                     var pattern = self.pattern();
 
-                    self.qrCodes.removeAll();
+                    // This will be filled and then replaces contents of the observable array in one go
+                    var newQrCodes = [];
 
                     for(var i = min; i <= max; i++) {
                         var padded = pad(i, max.toString().length);
                         var interpolated = interpolate(padded, pattern);
 
-                        self.qrCodes.push({
+                        newQrCodes.push({
                             value: interpolated,
                             url: self.imageUrl(interpolated)
                         });
                     }
+
+                    // Swap new QR codes in
+                    self.qrCodes(newQrCodes);
                 };
 
                 function pad(value, size) {
@@ -104,11 +113,6 @@
                     value = encodeURIComponent(value);
                     return "http://api.qrserver.com/v1/create-qr-code/?data=" + value + "&" + self.sizeParam();
                 };
-
-                // Elements are objects with properties:
-                //   value - value embedded in QR code
-                //   url   - QR code image url
-                self.qrCodes = ko.observableArray();
             }
 
             var vm = new MainViewModel();
